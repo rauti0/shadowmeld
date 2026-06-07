@@ -1,6 +1,6 @@
 # ShadowMeld — NSM Sensor
 
-Shadowmeld is my project to build and run a headless network security monitoring sensor on a Protectli VP2430.
+ShadowMeld is my project to build and run a headless network security monitoring sensor on a Protectli VP2430.
 It captures network traffic and runs its monitoring stack in Podman containers, managed out-of-band
 over a serial console and SSH. Capture is handled by tcpdump for raw packets, Zeek for traffic
 analysis, and Suricata for intrusion detection. I've set the switch to port mirroring, so the sensor
@@ -35,8 +35,8 @@ flowchart LR
 
 - [x] Debian (minimal, headless base OS)
 - [x] serial getty (out-of-band rescue console)
+- [x] nftables + sysctl + grub (system hardening)
 - [ ] OpenSSH (remote management)
-- [ ] nftables (firewall)
 - [ ] Podman + Compose (container runtime)
 - [ ] tcpdump (packet capture)
 - [ ] Zeek (network analysis)
@@ -51,5 +51,6 @@ Serial settings: **115200 8N1**.
 Each step is documented separately under [`docs/`](docs/):
 
 - [Debian installation](docs/debian-installation.md)
+- [System hardening](docs/system-hardening.md)
 
 

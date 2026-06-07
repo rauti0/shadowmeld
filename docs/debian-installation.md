@@ -2,14 +2,6 @@
 
 Headless install of Debian onto a Protectli VP2430 over a serial console.
 
-## Hardware layout
-
-- **eMMC** → operating system
-- **NVMe SSD** → reserved for capture/pcap data
-- **COM port** → serial console to workstation
-- **Port 1 (enp1s0)** → management — DHCP via switch during install, later the workstation NAT link (static IP)
-- **Port 4 (enp4s0)** → capture / mirror (no IP, listener only)
-
 ## 1. Create the installer USB
 
 Download the current Debian netinst image from
@@ -48,8 +40,10 @@ Boot the edited entry with `Ctrl-x`. The text installer now runs over serial.
 
 ## 4. Installer choices
 
-- **Network:** select the management NIC (enp1s0) as primary interface; it
-  picks up an address via DHCP.
+- **Network:** select the management NIC (enp1s0) as primary interface
+
+>Capture NIC: leave enp4s0 unconfigured — it carries mirrored traffic only (no IP, brought up later).
+
 - **Root password:** leave blank → root account is locked, first user gets sudo.
 - **User:** create a normal user (this account administers via `sudo`).
 
@@ -77,14 +71,9 @@ Minimal headless host — **no desktop environment**:
 [*] standard system utilities
 ```
 
-Let the install finish and reboot.
+Let the install finish and **reboot**.
 
-## 7. First boot + remove media
-
-Remove the USB stick **before** choosing Continue, so the sensor boots from the
-eMMC rather than restarting the installer.
-
-## 8. Make serial console persistent
+## 7. Make serial console persistent
 
 The installed system does not redirect to serial automatically. On first boot,
 edit the GRUB entry once (`e`, append `console=ttyS0,115200n8 console=tty0` to
@@ -127,8 +116,58 @@ After reboot the GRUB menu, full boot log, and login prompt all appear on the
 serial console with no manual editing. Attaching a monitor/keyboard later also
 works — both management paths are available in parallel.
 
-## Serial parameters reference
+## 8. Update and install packages
 
-`115200 8N1` = 115200 baud, 8 data bits, No parity, 1 stop bit. Both ends must
-match. The setting lives on the Vault side (kernel + GRUB) and works with any
-terminal program (picocom, tio, screen, minicom, PuTTY) set to the same values.
+Bring the freshly installed system up to date:
+
+```bash
+sudo apt update
+sudo apt full-upgrade
+```
+
+Install the extra tools used below: xfsprogs provides the XFS userspace tools (mkfs.xfs) and parted partitions the capture disk.
+
+```bash
+sudo apt install xfsprogs parted
+```
+
+## 9. Set up the capture volume
+
+The NVMe is a single disk dedicated to capture data — rolling pcaps and Zeek/Suricata logs. It uses a plain GPT partition (no LVM, which isn't needed for one dedicated disk), formatted as XFS to handle large files and heavy write loads well. It mounts at (`/data`) with (`noatime`).
+
+Confirm the target device is empty, then create a GPT label and a single
+partition spanning the disk ((`0% 100%`) lets (`parted`) handle alignment):
+
+```bash
+lsblk /dev/nvme0n1
+sudo parted -s /dev/nvme0n1 mklabel gpt
+sudo parted -s /dev/nvme0n1 mkpart primary xfs 0% 100%
+```
+
+Create the filesystem and read back its UUID — referencing it by UUID rather than
+device name survives disk reordering:
+
+```bash
+sudo mkfs.xfs /dev/nvme0n1p1
+sudo blkid /dev/nvme0n1p1
+```
+
+Create the mount point and add the fstab entry (substitute the UUID from
+blkid):
+
+```bash
+sudo mkdir /data
+echo 'UUID=<UUID>  /data  xfs  noatime  0  0' | sudo tee -a /etc/fstab
+```
+
+Reload units, mount, and verify:
+
+```bash
+sudo systemctl daemon-reload
+sudo mount -a
+findmnt /data
+df -h /data
+```
+
+The base install is now complete.
+
