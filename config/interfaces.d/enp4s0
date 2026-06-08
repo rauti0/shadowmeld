@@ -1,0 +1,4 @@
+auto enp4s0
+iface enp4s0 inet manual
+    up   ip link set dev $IFACE up promisc on
+    down ip link set dev $IFACE promisc off down
