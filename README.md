@@ -35,11 +35,11 @@ flowchart LR
 
 - [x] Debian (minimal, headless base OS)
 - [x] serial getty (out-of-band rescue console)
-- [x] nftables + sysctl + grub (system hardening)
 - [ ] OpenSSH (remote management)
-- [ ] Podman + Compose (container runtime)
-- [ ] tcpdump (packet capture)
-- [ ] Zeek (network analysis)
+- [x] nftables + sysctl + grub (system hardening)
+- [x] Podman + Quadlet (container runtime)
+- [x] tcpdump (packet capture)
+- [x] Zeek (network analysis)
 - [ ] Suricata (IDS)
 - [ ] node_exporter (host metrics)
 - [ ] Prometheus + Grafana (host monitoring)
@@ -52,5 +52,7 @@ Each step is documented separately under [`docs/`](docs/):
 
 - [Debian installation](docs/debian-installation.md)
 - [System hardening](docs/system-hardening.md)
-
+- [Podman setup](docs/podman.md)
+- [tcpdump setup](docs/tcpdump.md)
+- [Zeek setup](docs/zeek.md)
 
