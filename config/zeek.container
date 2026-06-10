@@ -1,0 +1,20 @@
+[Unit]
+Description=Zeek NSM sensor (capture: enp4s0)
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+Image=docker.io/zeek/zeek:lts
+Network=host
+DropCapability=ALL
+AddCapability=NET_RAW
+AddCapability=NET_ADMIN
+Volume=/data/zeek:/data/zeek
+WorkingDir=/data/zeek
+Exec=zeek -i enp4s0 /data/zeek/site.zeek
+
+[Service]
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

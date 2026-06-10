@@ -1,0 +1,32 @@
+[Unit]
+Description=ShadowMeld packet capture (tcpdump -> /data/capture)
+After=network-online.target
+Wants=network-online.target
+RequiresMountsFor=/data/capture
+
+[Service]
+Type=exec
+User=meld
+Group=meld
+AmbientCapabilities=CAP_NET_RAW
+CapabilityBoundingSet=CAP_NET_RAW
+ExecStart=/usr/bin/tcpdump -p -i enp4s0 -n -s 0 -C 1000 -W 300 -w /data/capture/sensor.pcap
+Restart=on-failure
+RestartSec=5
+
+# Hardening
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/data/capture
+ProtectHome=yes
+PrivateTmp=yes
+ProtectControlGroups=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+RestrictNamespaces=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+RestrictAddressFamilies=AF_PACKET AF_NETLINK AF_UNIX
+
+[Install]
+WantedBy=multi-user.target
