@@ -1,0 +1,24 @@
+[Unit]
+Description=Suricata IDS (passive)
+After=network-online.target
+Wants=network-online.target
+RequiresMountsFor=/data/suricata
+
+[Container]
+Image=docker.io/jasonish/suricata:latest
+ContainerName=suricata
+Network=host
+DropCapability=ALL
+AddCapability=CAP_NET_RAW CAP_NET_ADMIN CAP_SYS_NICE CAP_SETUID CAP_SETGID CAP_SETPCAP CAP_DAC_OVERRIDE CAP_CHOWN
+Entrypoint=/usr/bin/suricata
+Exec=-c /etc/suricata/suricata.yaml --af-packet --user suricata --group suricata
+Volume=/etc/shadowmeld/suricata:/etc/suricata:ro
+Volume=/var/lib/shadowmeld/suricata/rules:/var/lib/suricata/rules:ro
+Volume=/data/suricata:/var/log/suricata
+Volume=/etc/localtime:/etc/localtime:ro
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
