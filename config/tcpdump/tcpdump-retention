@@ -1,0 +1,25 @@
+#!/bin/bash
+
+set -euo pipefail
+
+PCAP_DIR=/data/pcap
+BUDGET_GB="${BUDGET_GB:-300}"
+BUDGET_BYTES=$((BUDGET_GB * 1024 * 1024 * 1024))
+
+cd "$PCAP_DIR"
+
+mapfile -t files < <(ls -1tr sensor_*.pcap* 2>/dev/null)
+[ "${#files[@]}" -eq 0 ] && exit 0
+
+total=$(du -cb "${files[@]}" | tail -n1 | cut -f1)
+
+# all but the newest, oldest first
+for f in "${files[@]:0:${#files[@]}-1}"; do
+    [ "$total" -le "$BUDGET_BYTES" ] && break
+    size=$(stat -c %s "$f")
+    rm -f -- "$f"
+    echo "deleted $f ($size bytes), total now $((total - size))"
+    total=$((total - size))
+done
+
+exit 0

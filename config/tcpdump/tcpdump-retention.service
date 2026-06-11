@@ -1,0 +1,11 @@
+[Unit]
+Descripttcpdumpp pcap retention
+
+[Service]
+Type=oneshot
+User=meld
+ExecStart=/usr/local/bin/tcpdump-retention
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/data/pcap
+PrivateTmp=yes

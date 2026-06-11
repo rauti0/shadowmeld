@@ -1,0 +1,20 @@
+#!/bin/bash
+
+set -u
+
+IFACE=enp4s0
+OUTDIR=/data/pcap
+PATTERN="$OUTDIR/sensor_%Y%m%d_%H%M%S.pcap"
+ARGS=(-i "$IFACE" -n -s 0 -G 3600 -C 1000 -w "$PATTERN")
+
+now=$(date +%s)
+next=$(( (now / 3600 + 1) * 3600 ))
+wait=$(( next - now ))
+
+timeout "$wait" tcpdump "${ARGS[@]}"
+rc=$?
+if [ "$rc" -ne 124 ] && [ "$rc" -ne 0 ]; then
+    exit "$rc"
+fi
+
+exec tcpdump "${ARGS[@]}"

@@ -1,8 +1,8 @@
 [Unit]
-Description=ShadowMeld packet capture (tcpdump -> /data/capture)
+Description=tcpdump packet capture (tcpdump -> /data/capture)
 After=network-online.target
 Wants=network-online.target
-RequiresMountsFor=/data/capture
+RequiresMountsFor=/data/pcap
 
 [Service]
 Type=exec
@@ -17,7 +17,7 @@ RestartSec=5
 # Hardening
 NoNewPrivileges=yes
 ProtectSystem=strict
-ReadWritePaths=/data/capture
+ReadWritePaths=/data/pcap
 ProtectHome=yes
 PrivateTmp=yes
 ProtectControlGroups=yes
