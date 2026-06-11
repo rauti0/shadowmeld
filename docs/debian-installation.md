@@ -1,12 +1,12 @@
 # Debian Installation — ShadowMeld (NSM Sensor)
 
-Headless install of Debian onto a Protectli VP2430 over a serial console.
+Headless install of Debian onto a Protectli VP2430 over serial console.
 
 ## 1. Create the installer USB
 
 Download the current Debian netinst image from
 <https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/> and write it to a
-USB stick (verify the target device with `lsblk` first):
+USB stick. Check the target device with `lsblk` first:
 
 ```bash
 sudo dd if=debian-*-amd64-netinst.iso of=/dev/<USB_NAME> bs=4M status=progress oflag=sync
@@ -14,25 +14,25 @@ sudo dd if=debian-*-amd64-netinst.iso of=/dev/<USB_NAME> bs=4M status=progress o
 
 ## 2. Connect serial console
 
-On the workstation, open the serial console (115200 8N1).
+Open the serial console on the workstation (115200 8N1).
 Any serial terminal works with the same settings — (`picocom`) is used here:
 
 ```bash
 picocom -b 115200 /dev/ttyUSB0
 ```
 
-Power on the sensor. The firmware mirrors POST and the GRUB menu to serial.
+Power on the sensor. The firmware sends POST and the GRUB menu to serial.
 
 ## 3. Boot the installer over serial
 
-At the installer's GRUB menu, highlight the text-mode **Install** entry and
-press `e` to edit. Append a serial console to the `linux` line before `---`:
+At the Installer's GRUB menu, highlight **Install** entry and
+press `e` to edit. Add a serial console to the `linux` line before `---`:
 
 ```
 linux /install.amd/vmlinuz vga=788 console=ttyS0,115200n8 --- quiet
 ```
 
-Boot the edited entry with `Ctrl-x`. The text installer now runs over serial.
+Boot with `Ctrl-x`. The text installer now runs over serial.
 
 > Serial console navigation: arrow keys may not pass through. Use
 > `Ctrl-n` (down), `Ctrl-p` (up), `Ctrl-f` (forward), `Ctrl-e` (end of line).
@@ -40,25 +40,25 @@ Boot the edited entry with `Ctrl-x`. The text installer now runs over serial.
 
 ## 4. Installer choices
 
-- **Network:** select the management NIC (enp1s0) as primary interface
+- **Network:** select the management NIC (enp1s0) 
 
 >Capture NIC: leave enp4s0 unconfigured — it carries mirrored traffic only (no IP, brought up later).
 
 - **Root password:** leave blank → root account is locked, first user gets sudo.
-- **User:** create a normal user (this account administers via `sudo`).
+- **User:** create a normal user for admin access via `sudo`.
 
 ## 5. Partitioning
 
-Target the **eMMC only** — leave the NVMe untouched.
+Use the **eMMC only** — leave the NVMe untouched.
 
 - Guided partitioning, **use entire disk and set up LVM**
 - Select the eMMC device (`mmcblk0`)
-- "All files in one partition" is fine for a small OS disk
+- "All files in one partition" works fine for a small OS disk
 - Confirm the summary lists **only mmcblk0** (NVMe must not appear), write changes
 
-A server scheme with a separate (`/var`) is the alternative — it keeps growing logs
+A server layout with a separate (`/var`) is the alternative — it keeps growing logs
 and container images from filling the root partition. On a small 32 GB disk the
-single-partition layout was simpler, and capture data lives on the NVMe anyway.
+single partition layout is simpler. Capture data goes on the NVMe.
 
 ## 6. Software selection (tasksel)
 
@@ -75,7 +75,7 @@ Let the install finish and **reboot**.
 
 ## 7. Make serial console persistent
 
-The installed system does not redirect to serial automatically. On first boot,
+The installed system does not use serial console automatically. On first boot,
 edit the GRUB entry once (`e`, append `console=ttyS0,115200n8 console=tty0` to
 the `linux` line, `Ctrl-x`) to reach the login.
 
@@ -91,14 +91,13 @@ Then make it permanent. Edit GRUB defaults:
 sudoedit /etc/default/grub
 ```
 
-Set the kernel command line (keeps both screen and serial usable; serial gets
-the login prompt because it is listed last):
+Set the kernel command line (keeps both screen and serial console usable).
 
 ```
 GRUB_CMDLINE_LINUX_DEFAULT="quiet console=tty0 console=ttyS0,115200n8"
 ```
 
-Add serial output for the GRUB menu itself:
+Add serial output for the GRUB menu:
 
 ```
 GRUB_TERMINAL="console serial"
@@ -112,20 +111,19 @@ sudo update-grub
 sudo reboot
 ```
 
-After reboot the GRUB menu, full boot log, and login prompt all appear on the
-serial console with no manual editing. Attaching a monitor/keyboard later also
-works — both management paths are available in parallel.
+After reboot the GRUB menu, boot log, and login prompt all appear on the
+serial console with no manual editing.
 
 ## 8. Update and install packages
 
-Bring the freshly installed system up to date:
+Update the system:
 
 ```bash
 sudo apt update
 sudo apt full-upgrade
 ```
 
-Install the extra tools used below: xfsprogs provides the XFS userspace tools (mkfs.xfs) and parted partitions the capture disk.
+Install tools for the capture disk. xfsprogs gives XFS tools (mkfs.xfs) and parted partitions the disk.
 
 ```bash
 sudo apt install xfsprogs parted
@@ -133,10 +131,11 @@ sudo apt install xfsprogs parted
 
 ## 9. Set up the capture volume
 
-The NVMe is a single disk dedicated to capture data — rolling pcaps and Zeek/Suricata logs. It uses a plain GPT partition (no LVM, which isn't needed for one dedicated disk), formatted as XFS to handle large files and heavy write loads well. It mounts at (`/data`) with (`noatime`).
+The NVMe holds capture data — pcaps and Zeek/Suricata logs. It uses a plain GPT partition (no LVM), 
+formatted as XFS to handle large files and heavy write loads, mounted at (`/data`) with (`noatime`).
 
-Confirm the target device is empty, then create a GPT label and a single
-partition spanning the disk ((`0% 100%`) lets (`parted`) handle alignment):
+Confirm that the target device is empty, then create a GPT label and a single
+partition that spans the disk:
 
 ```bash
 lsblk /dev/nvme0n1
@@ -144,15 +143,14 @@ sudo parted -s /dev/nvme0n1 mklabel gpt
 sudo parted -s /dev/nvme0n1 mkpart primary xfs 0% 100%
 ```
 
-Create the filesystem and read back its UUID — referencing it by UUID rather than
-device name survives disk reordering:
+Create the filesystem and get its UUID:
 
 ```bash
 sudo mkfs.xfs /dev/nvme0n1p1
 sudo blkid /dev/nvme0n1p1
 ```
 
-Create the mount point and add the fstab entry (substitute the UUID from
+Create the mount point and add the fstab entry (use the UUID from
 blkid):
 
 ```bash

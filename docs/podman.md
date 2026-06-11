@@ -1,8 +1,8 @@
 # Podman (rootless container runtime)
 
 The monitoring stack (tcpdump, Zeek, Suricata, Prometheus, Grafana) runs in
-rootless Podman containers under a dedicated unprivileged service account.
-A compromised container gains only that account's privileges, never host root.
+rootless Podman containers under a dedicated unprivileged user.
+A compromised container only gets that account's privileges, never host root.
 
 ## Service account
 
@@ -12,7 +12,7 @@ no SSH access):
     sudo useradd -m -s /bin/bash meld
 
 Rootless Podman maps container UIDs to a subordinate UID/GID range assigned to
-the user in /etc/subuid and /etc/subgid (allocated automatically by useradd):
+the user in `/etc/subuid` and `/etc/subgid` (assigned automatically by useradd):
 container UID 0 maps to `meld`, container UID 1+ map into the subordinate range.
 
 Lingering keeps the user's systemd instance running without an active login,
@@ -33,17 +33,16 @@ so containers start at boot and survive console/SSH disconnects:
 
 ## Management access
 
-`meld` is reached from `admin`, not by direct login:
+`meld` is reached from `admin`, not direct login:
 
     sudo -u meld -i
 
-The shell exports XDG_RUNTIME_DIR and DBUS_SESSION_BUS_ADDRESS (see
-~meld/.bashrc) so `podman` and `systemctl --user` work.
+The shell exports `XDG_RUNTIME_DIR` and `DBUS_SESSION_BUS_ADDRESS` (see
+`~meld/.bashrc`) so `podman` and `systemctl --user` work.
 
 ## Registries
 
-Trixie ships no unqualified search registries and we keep it that way: always
-use fully qualified image names (e.g. docker.io/library/...) for deterministic
+Always use fully qualified image names (e.g. docker.io/library/...) for deterministic
 pulls. No change to /etc/containers/registries.conf.
 
 ## Verify
