@@ -1,0 +1,3 @@
+auto enps0
+iface enp1s0 inet static
+    address <SENSOR_P2P_IP>/31
