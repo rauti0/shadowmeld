@@ -1,0 +1,33 @@
+#!/bin/bash
+# shadowmeld-status            - statuslohko jokaisesta palvelusta, ei logeja
+# shadowmeld-status <unit>     - täysi status + logit yhdelle palvelulle
+
+LINES=20
+
+SYSTEM_UNITS=(
+    nftables.service
+    prometheus-node-exporter.service
+    tcpdump-capture.service
+    tcpdump-retention.timer
+    zeek.service
+    suricata.service
+)
+
+if [ -n "$1" ]; then
+    case "$1" in
+        prometheus|prometheus.service)
+            exec systemctl --user -M meld@ status -n "$LINES" --no-pager prometheus.service
+            ;;
+        *)
+            exec systemctl status -n "$LINES" --no-pager "$1"
+            ;;
+    esac
+fi
+
+for unit in "${SYSTEM_UNITS[@]}"; do
+    SYSTEMD_COLORS=1 systemctl status -n 0 --no-pager "$unit" | sed -e '/CGroup:/,$d' -e '/Invocation:/d' -e '/Tasks:/d' -e '/Main PID:/d' -e '/Docs:/d'
+    echo
+done
+
+echo "--- prometheus.service (meld, rootless) ---"
+SYSTEMD_COLORS=1 systemctl --user -M meld@ status -n 0 --no-pager prometheus.service | sed -e '/CGroup:/,$d' -e '/Invocation:/d' -e '/Tasks:/d' -e '/Main PID:/d' -e '/Docs:/d'
