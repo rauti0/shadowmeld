@@ -1,0 +1,11 @@
+/data/suricata/eve.json {
+    daily
+    rotate 7
+    compress
+    delaycompress
+    missingok
+    notifempty
+    postrotate
+        /usr/bin/podman kill --signal HUP suricata
+    endscript
+}
