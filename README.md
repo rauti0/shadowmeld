@@ -1,11 +1,9 @@
 # ShadowMeld — NSM Sensor
 
-ShadowMeld is my project to build and run a headless network security monitoring sensor on a Protectli VP2430.
-It captures network traffic and runs its monitoring stack in Podman containers, managed out-of-band
-over a serial console and SSH. Capture is handled by tcpdump for raw packets, Zeek for traffic
-analysis, and Suricata for intrusion detection. I've set the switch to port mirroring, so the sensor
-gets a copy of all traffic without sitting in the path — if the sensor is off, the rest of the network
-stays online. I also monitor the sensor's own hardware with node_exporter feeding Prometheus and Grafana.
+ShadowMeld is a network security monitoring (NSM) sensor that runs on a Protectli VP2430. Capturing network traffic and running the monitoring stack 
+in Podman containers orchestrated by Quadlet, it is managed over serial console and SSH. Packet capture uses tcpdump, traffic analysis uses Zeek,
+and intrusion detection uses Suricata (IDS). The sensor's hardware is monitored with node_exporter and Prometheus. Sensor's logs are
+forwarded to linux workstation with Filebeat and processed with an ELK stack. Hardware metrics from Prometheus are visualized in Grafana on the workstation.
 
 ## Architecture
 
@@ -31,28 +29,37 @@ flowchart LR
 - TP-Link TL-SG105E — managed switch, port mirroring
 - Intel X550-T2 — workstation NIC, dedicated management link
 
-## Stack
+## Sensor Stack
 
-- [x] Debian (minimal, headless base OS)
-- [x] serial getty (out-of-band rescue console)
-- [ ] OpenSSH (remote management)
-- [x] nftables + sysctl + grub (system hardening)
-- [x] Podman + Quadlet (container runtime)
-- [x] tcpdump (packet capture)
-- [x] Zeek (network analysis)
-- [ ] Suricata (IDS)
-- [ ] node_exporter (host metrics)
-- [ ] Prometheus + Grafana (host monitoring)
+- [x] Debian
+- [x] serial getty
+- [x] OpenSSH
+- [x] System hardening (nftables + sysctl + grub)
+- [x] Podman + Quadlet
+- [x] tcpdump
+- [x] Zeek
+- [x] Suricata
+- [x] node_exporter
+- [x] Prometheus
+- [ ] Filebeat
+
+## Workstation
+
+- [ ] ELK stack (Elasticsearch + Logstash + Kibana)
+- [ ] Grafana
 
 ## Installation
 
 Installed and managed headless over COM cable.
 Serial settings: **115200 8N1**.
+
 Each step is documented separately under [`docs/`](docs/):
 
 - [Debian installation](docs/debian-installation.md)
 - [System hardening](docs/system-hardening.md)
-- [Podman setup](docs/podman.md)
-- [tcpdump setup](docs/tcpdump.md)
-- [Zeek setup](docs/zeek.md)
-
+- [Network setup](docs/network-setup.md)
+- [Podman](docs/podman.md)
+- [tcpdump](docs/tcpdump.md)
+- [Zeek](docs/zeek.md)
+- [Suricata](docs/suricata.md)
+- [Prometheus](docs/prometheus.md)
